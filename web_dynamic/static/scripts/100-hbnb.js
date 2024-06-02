@@ -1,9 +1,6 @@
-$(document).ready(function() {
-    const selectedStates = {};
-    const selectedCities = {};
-  
-    // Check API status
-    $.get('http://0.0.0.0:5001/api/v1/status/', function(data) {
+window.addEventListener('load', function () {
+    // task 3
+    $.ajax('http://0.0.0.0:5001/api/v1/status').done(function (data) {
       if (data.status === 'OK') {
         $('#api_status').addClass('available');
       } else {
@@ -11,79 +8,106 @@ $(document).ready(function() {
       }
     });
   
-    // Load places from API initially
-    loadPlaces();
-  
-    // Filter places on button click
-    $('#filter_btn').click(function() {
-      loadPlaces();
-    });
-  
-    // Listen to changes on state checkboxes
-    $('.states input[type="checkbox"]').change(function() {
-      const stateId = $(this).data('id');
-      const stateName = $(this).data('name');
-      if ($(this).is(':checked')) {
-        selectedStates[stateId] = stateName;
-      } else {
-        delete selectedStates[stateId];
+    // task 2
+    const amenityIds = {};
+    $('.amenities input[type=checkbox]').click(function () {
+      if ($(this).prop('checked')) {
+        amenityIds[$(this).attr('data-id')] = $(this).attr('data-name');
+      } else if (!$(this).prop('checked')) {
+        delete amenityIds[$(this).attr('data-id')];
       }
-      updateLocations();
-    });
-  
-    // Listen to changes on city checkboxes
-    $('.cities input[type="checkbox"]').change(function() {
-      const cityId = $(this).data('id');
-      const cityName = $(this).data('name');
-      if ($(this).is(':checked')) {
-        selectedCities[cityId] = cityName;
+      if (Object.keys(amenityIds).length === 0) {
+        $('div.amenities h4').html('&nbsp;');
       } else {
-        delete selectedCities[cityId];
+        $('div.amenities h4').text(Object.values(amenityIds).join(', '));
       }
-      updateLocations();
     });
   
-    // Function to update locations in the filter
-    function updateLocations() {
-      const selectedLocations = Object.values(selectedStates).concat(Object.values(selectedCities));
-      $('.locations h4').text(selectedLocations.join(', '));
-    }
-  
-    // Function to load places from API
-    function loadPlaces() {
-      const amenities = [];
-      const states = Object.keys(selectedStates);
-      const cities = Object.keys(selectedCities);
-  
+    const stateIds = {};
+    const cityIds = {};
+    // task 4
+    $('.filters button').click(function () {
       $.ajax({
-        url: 'http://0.0.0.0:5001/api/v1/places_search/',
         type: 'POST',
+        url: 'http://0.0.0.0:5001/api/v1/places_search/',
         contentType: 'application/json',
-        data: JSON.stringify({ amenities: amenities, states: states, cities: cities }),
-        success: function(data) {
-          $('.places').empty();
-          for (const place of data) {
-            $('.places').append(`
-              <article>
-                <div class="title_box">
-                  <h2>${place.name}</h2>
-                  <div class="price_by_night">$${place.price_by_night}</div>
-                </div>
-                <div class="information">
-                  <div class="max_guest">${place.max_guest} Guest${place.max_guest != 1 ? 's' : ''}</div>
-                  <div class="number_rooms">${place.number_rooms} Bedroom${place.number_rooms != 1 ? 's' : ''}</div>
-                  <div class="number_bathrooms">${place.number_bathrooms} Bathroom${place.number_bathrooms != 1 ? 's' : ''}</div>
-                </div>
-                <div class="user">
-                  Owner: ${place.user_id}
-                </div>
-                <div class="description">
-                  ${place.description}
-                </div>
-              </article>
-            `);
-          }
+        data: JSON.stringify({
+          amenities: Object.keys(amenityIds),
+          states: Object.keys(stateIds),
+          cities: Object.keys(cityIds)
+        })
+      }).done(function (data) {
+        $('section.places').empty();
+        $('section.places').append('<h1>Places</h1>');
+        for (const place of data) {
+          const template = `<article>
+          <div class="title">
+          <h2>${place.name}</h2>
+          <div class="price_by_night">
+        $${place.price_by_night}
+        </div>
+          </div>
+          <div class="information">
+          <div class="max_guest">
+          <i class="fa fa-users fa-3x" aria-hidden="true"></i>
+  
+          <br />
+  
+        ${place.max_guest} Guests
+  
+        </div>
+          <div class="number_rooms">
+          <i class="fa fa-bed fa-3x" aria-hidden="true"></i>
+  
+          <br />
+  
+        ${place.number_rooms} Bedrooms
+        </div>
+          <div class="number_bathrooms">
+          <i class="fa fa-bath fa-3x" aria-hidden="true"></i>
+  
+          <br />
+  
+        ${place.number_bathrooms} Bathroom
+  
+        </div>
+          </div>
+          <div class="description">
+  
+        ${place.description}
+  
+        </div>
+  
+        </article> <!-- End 1 PLACE Article -->`;
+          $('section.places').append(template);
         }
       });
-    }
+    });
+  
+    // task 6
+    $('.stateCheckBox').click(function () {
+      if ($(this).prop('checked')) {
+        stateIds[$(this).attr('data-id')] = $(this).attr('data-name');
+      } else if (!$(this).prop('checked')) {
+        delete stateIds[$(this).attr('data-id')];
+      }
+      if (Object.keys(stateIds).length === 0 && Object.keys(cityIds).length === 0) {
+        $('.locations h4').html('&nbsp;');
+      } else {
+        $('.locations h4').text(Object.values(stateIds).concat(Object.values(cityIds)).join(', '));
+      }
+    });
+  
+    $('.cityCheckBox').click(function () {
+      if ($(this).prop('checked')) {
+        cityIds[$(this).attr('data-id')] = $(this).attr('data-name');
+      } else if (!$(this).prop('checked')) {
+        delete cityIds[$(this).attr('data-id')];
+      }
+      if (Object.keys(stateIds).length === 0 && Object.keys(cityIds).length === 0) {
+        $('.locations h4').html('&nbsp;');
+      } else {
+        $('.locations h4').text(Object.values(cityIds).concat(Object.values(stateIds)).join(', '));
+      }
+    });
   });
